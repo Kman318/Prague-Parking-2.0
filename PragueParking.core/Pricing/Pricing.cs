@@ -33,12 +33,10 @@ public static class Pricing
         {
             Car => carHourlyRate,
             Motorcycle => motorcycleHourlyRate,
-            _ => throw new NotSupportedException(
-                $"Unsupported vehicle type: {vehicle.GetType().Name}")
+            _ => throw new NotSupportedException($"Unsupported vehicle type: {vehicle.GetType().Name}")
         };
 
-        double billableHours = Math.Ceiling(
-            (parkingDuration - freePeriod).TotalHours);
+        double billableHours = Math.Ceiling((parkingDuration - freePeriod).TotalHours);
 
         return (decimal)billableHours * hourlyRate;
     }

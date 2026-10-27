@@ -45,20 +45,13 @@ public class PricingTests
         Assert.Equal(expectedFee, fee);
     }
 
-    private static decimal CalculateFee(
-        Vehicle vehicle,
-        int parkingMinutes,
-        decimal hourlyRate)
+    private static decimal CalculateFee(Vehicle vehicle, int parkingMinutes, decimal hourlyRate)
     {
         DateTimeOffset arrival = DateTimeOffset.Now;
 
-        var ticket = new ParkingTicket(
-            vehicle.RegistrationNumber,
-            1,
-            arrival);
+        var ticket = new ParkingTicket(vehicle.RegistrationNumber, 1, arrival);
 
-        ticket.RegisterDeparture(
-            arrival.AddMinutes(parkingMinutes));
+        ticket.RegisterDeparture(arrival.AddMinutes(parkingMinutes));
 
         return Pricing.CalculateFee(
             vehicle,

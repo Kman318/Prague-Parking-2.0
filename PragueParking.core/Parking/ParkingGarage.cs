@@ -2,18 +2,32 @@
 using System.Collections.Generic;
 using System.Text;
 
-
-
-
 namespace PragueParking.Core;
 
 public class ParkingGarage
 {
     public List<ParkingSpot> ParkingSpots { get; } = new();
     public List<ParkingTicket> ParkingTickets { get; } = new();
+    public int MotorcyclesPerSpot { get; }
 
-    public ParkingGarage(int numberOfSpots = 100)
+    public ParkingGarage(
+    int numberOfSpots = 100,
+    int motorcyclesPerSpot = 2)
     {
+        if (numberOfSpots <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(numberOfSpots),
+                "The number of parking spots must be greater than zero.");
+        }
+
+        if (motorcyclesPerSpot <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(motorcyclesPerSpot),
+                "Motorcycles per spot must be greater than zero.");
+        }
+
+        MotorcyclesPerSpot = motorcyclesPerSpot;
+
         for (int i = 1; i <= numberOfSpots; i++)
         {
             ParkingSpots.Add(new ParkingSpot(i));
@@ -36,8 +50,7 @@ public class ParkingGarage
             {
                 spot.ParkedVehicles.Add(vehicle);
 
-                ParkingTickets.Add(
-                    new ParkingTicket(
+                ParkingTickets.Add(new ParkingTicket(
                         vehicle.RegistrationNumber,
                         spot.SpotNumber,
                         vehicle.ArrivalTime));
@@ -66,7 +79,7 @@ public class ParkingGarage
             return false;
         }
 
-        if (vehicle is Motorcycle && spot.ParkedVehicles.Count < 2)
+        if (vehicle is Motorcycle && spot.ParkedVehicles.Count < MotorcyclesPerSpot)
         {
             return true;
         }
@@ -77,20 +90,14 @@ public class ParkingGarage
     {
         foreach (ParkingSpot spot in ParkingSpots)
         {
-            Vehicle? vehicle = spot.ParkedVehicles
-                .FirstOrDefault(v =>
-                    v.RegistrationNumber.Equals(
-                        registrationNumber,
-                        StringComparison.OrdinalIgnoreCase));
+            Vehicle? vehicle = spot.ParkedVehicles.FirstOrDefault(v => v.RegistrationNumber.Equals(
+                        registrationNumber, StringComparison.OrdinalIgnoreCase));
 
             if (vehicle is not null)
             {
-                ParkingTicket? ticket = ParkingTickets
-                    .LastOrDefault(t =>
-                        t.RegistrationNumber.Equals(
-                            vehicle.RegistrationNumber,
-                            StringComparison.OrdinalIgnoreCase)
-                        && t.DepartureTime is null);
+                ParkingTicket? ticket = ParkingTickets.LastOrDefault(t =>
+                        t.RegistrationNumber.Equals(vehicle.RegistrationNumber,
+                            StringComparison.OrdinalIgnoreCase) && t.DepartureTime is null);
 
                 ticket?.RegisterDeparture(DateTimeOffset.Now);
 
@@ -100,16 +107,66 @@ public class ParkingGarage
         }
 
         return false;
+    
     }
+
+    public void ClearGarage()
+    {
+        foreach (ParkingSpot spot in ParkingSpots)
+        {
+            spot.ParkedVehicles.Clear();
+        }
+
+        ParkingTickets.Clear();
+    }
+
+
+    public bool MoveVehicle(string registrationNumber, int targetSpotNumber)
+    {
+        ParkingSpot? sourceSpot = FindParkingSpot(registrationNumber);
+
+        if (sourceSpot is null)
+        {
+            return false;
+        }
+
+        ParkingSpot? targetSpot = ParkingSpots.FirstOrDefault(s => s.SpotNumber == targetSpotNumber);
+
+        if (targetSpot is null || sourceSpot == targetSpot)
+        {
+            return false;
+        }
+
+        Vehicle? vehicle = sourceSpot.ParkedVehicles
+            .FirstOrDefault(v => v.RegistrationNumber.Equals(
+                registrationNumber,
+                StringComparison.OrdinalIgnoreCase));
+
+        if (vehicle is null || !CanParkVehicle(targetSpot, vehicle))
+        {
+            return false;
+        }
+
+        sourceSpot.ParkedVehicles.Remove(vehicle);
+        targetSpot.ParkedVehicles.Add(vehicle);
+
+        ParkingTicket? ticket = ParkingTickets.LastOrDefault(t =>
+            t.RegistrationNumber.Equals(
+                vehicle.RegistrationNumber,
+                StringComparison.OrdinalIgnoreCase) && t.DepartureTime is null);
+
+        ticket?.UpdateSpotNumber(targetSpot.SpotNumber);
+
+        return true;
+    }
+
+
     public Vehicle? FindVehicle(string registrationNumber)
     {
         foreach (ParkingSpot spot in ParkingSpots)
         {
-            Vehicle? vehicle = spot.ParkedVehicles
-                .FirstOrDefault(v =>
-                    v.RegistrationNumber.Equals(
-                        registrationNumber,
-                        StringComparison.OrdinalIgnoreCase));
+            Vehicle? vehicle = spot.ParkedVehicles.FirstOrDefault(v =>
+                    v.RegistrationNumber.Equals(registrationNumber, StringComparison.OrdinalIgnoreCase));
 
             if (vehicle is not null)
             {
@@ -124,9 +181,7 @@ public class ParkingGarage
         foreach (ParkingSpot spot in ParkingSpots)
         {
             bool found = spot.ParkedVehicles.Any(v =>
-                v.RegistrationNumber.Equals(
-                    registrationNumber,
-                    StringComparison.OrdinalIgnoreCase));
+                v.RegistrationNumber.Equals(registrationNumber, StringComparison.OrdinalIgnoreCase));
 
             if (found)
             {

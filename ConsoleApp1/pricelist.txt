@@ -1,0 +1,8 @@
+# Prague Parking - Price List
+# Prices are in CZK.
+# Edit the values after the equals sign.
+# FreeMinutes: Number of minutes before charging starts.
+
+CarHourlyRate=20
+MotorcycleHourlyRate=10
+FreeMinutes=10
